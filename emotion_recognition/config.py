@@ -29,8 +29,12 @@ class Config:
     # ---------- model ----------
     audio_model_name: str = "facebook/wav2vec2-base"
     text_model_name: str = "roberta-base"
-    # Freeze Wav2Vec2's CNN feature extractor (keeps it cheap, usually hurts <0.5%)
     freeze_feature_extractor: bool = True
+    # Freeze the bottom N transformer layers of Wav2Vec2 (base has 12 total).
+    # With 5K training samples, freezing 8 leaves ~18M trainable audio params
+    # instead of 88M — roughly 290 samples/1M params vs 59 — much safer.
+    # Rule of thumb: freeze_transformer_layers = total_layers - 4 for <10K samples.
+    freeze_transformer_layers: int = 8
     hidden_dim: int = 512
     dropout: float = 0.3
 
