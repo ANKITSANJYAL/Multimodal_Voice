@@ -36,7 +36,7 @@ class Config:
     # Rule of thumb: freeze_transformer_layers = total_layers - 4 for <10K samples.
     freeze_transformer_layers: int = 8
     hidden_dim: int = 512
-    dropout: float = 0.3
+    dropout: float = 0.4
 
     # ---------- training ----------
     batch_size: int = 8
@@ -45,8 +45,8 @@ class Config:
     encoder_lr: float = 2e-5
     head_lr: float = 1e-4
     max_grad_norm: float = 1.0
-    label_smoothing: float = 0.05
-    early_stop_patience: int = 6
+    label_smoothing: float = 0.1
+    early_stop_patience: int = 8
     use_weighted_sampler: bool = True
     use_fp16: bool = True       # mixed-precision; set False on CPU
 
