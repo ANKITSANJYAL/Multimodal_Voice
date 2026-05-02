@@ -60,35 +60,37 @@ def main(cfg: Config = None):
     val_ds   = EmotionDataset(val_df,   cfg.target_sr, cfg.max_audio_seconds, apply_augmentation=False, use_text=cfg.use_text)
     test_ds  = EmotionDataset(test_df,  cfg.target_sr, cfg.max_audio_seconds, apply_augmentation=False, use_text=cfg.use_text)
 
+    # num_workers=0 avoids the Python 3.12 / Colab multiprocessing assert bug
+    # ("can only test a child process"). The dataset is small enough that
+    # single-process loading is not a throughput bottleneck.
     if cfg.use_weighted_sampler:
         sampler = _make_weighted_sampler(train_df)
         train_loader = DataLoader(
             train_ds, batch_size=cfg.batch_size, sampler=sampler,
-            collate_fn=collator, num_workers=2, pin_memory=True,
+            collate_fn=collator, num_workers=0, pin_memory=True,
         )
     else:
         train_loader = DataLoader(
             train_ds, batch_size=cfg.batch_size, shuffle=True,
-            collate_fn=collator, num_workers=2, pin_memory=True,
+            collate_fn=collator, num_workers=0, pin_memory=True,
         )
 
     val_loader = DataLoader(
         val_ds, batch_size=cfg.batch_size * 2, shuffle=False,
-        collate_fn=collator, num_workers=2, pin_memory=True,
+        collate_fn=collator, num_workers=0, pin_memory=True,
     )
     test_loader = DataLoader(
         test_ds, batch_size=cfg.batch_size * 2, shuffle=False,
-        collate_fn=collator, num_workers=2, pin_memory=True,
+        collate_fn=collator, num_workers=0, pin_memory=True,
     )
 
     # ── model ─────────────────────────────────────────────────────────
     model = FusionClassifier(cfg).to(device)
 
-    # Gradient checkpointing halves activation memory — lets us keep batch_size=8
-    # on a 16 GB T4 with two transformer encoders loaded simultaneously.
-    model.audio_enc.wav2vec2.gradient_checkpointing_enable()
-    if cfg.use_text:
-        model.text_enc.encoder.gradient_checkpointing_enable()
+    if cfg.gradient_checkpointing:
+        model.audio_enc.wav2vec2.gradient_checkpointing_enable()
+        if cfg.use_text:
+            model.text_enc.encoder.gradient_checkpointing_enable()
 
     n_params = sum(p.numel() for p in model.parameters() if p.requires_grad) / 1e6
     print(f"Trainable params: {n_params:.1f} M")

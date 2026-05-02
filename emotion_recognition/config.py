@@ -49,6 +49,9 @@ class Config:
     early_stop_patience: int = 8
     use_weighted_sampler: bool = True
     use_fp16: bool = True       # mixed-precision; set False on CPU
+    # Set False on high-VRAM GPUs (≥40 GB) to avoid the slowdown from
+    # recomputing activations. Keep True on T4/P100 (16 GB).
+    gradient_checkpointing: bool = True
 
     # ---------- derived (read-only) ----------
     @property
