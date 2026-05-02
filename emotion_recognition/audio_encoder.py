@@ -24,7 +24,14 @@ class AudioEncoder(nn.Module):
         freeze_transformer_layers: int = 8,
     ):
         super().__init__()
-        self.wav2vec2 = Wav2Vec2Model.from_pretrained(model_name)
+        
+        # UPDATED: Added use_safetensors=True to bypass the CVE-2025-32434 security block
+        # and ensure safe loading on modern PyTorch versions.
+        self.wav2vec2 = Wav2Vec2Model.from_pretrained(
+            model_name, 
+            use_safetensors=True
+        )
+        
         self.embed_dim: int = self.wav2vec2.config.hidden_size  # 768 for -base
 
         # SpecAugment fires during model.train() on the CNN output features.
